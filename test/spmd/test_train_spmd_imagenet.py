@@ -229,7 +229,8 @@ def train_imagenet():
     # Model sharding
     if 'conv' in FLAGS.sharding:
       # Shard the model's convlution layers along two dimensions
-      mesh_shape = (2, num_devices // 2, 1, 1)
+      # mesh_shape = (2, num_devices // 2, 1, 1)
+      mesh_shape = (num_devices // 2, 2, 1, 1)
       mesh = xs.Mesh(device_ids, mesh_shape, ('w', 'x', 'y', 'z'))
       partition_spec = (0, 1, 2, 3)  # Apply sharding along all axes
       print(
