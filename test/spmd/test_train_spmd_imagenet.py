@@ -385,6 +385,7 @@ def train_imagenet():
 if __name__ == '__main__':
   if FLAGS.profile:
     server = xp.start_server(FLAGS.profiler_port)
+  print("This is my test.")
 
   torch.set_default_dtype(torch.float32)
   accuracy = train_imagenet()
