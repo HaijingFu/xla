@@ -88,6 +88,13 @@ import torch_xla.distributed.spmd as xs
 
 xr.use_spmd(auto=FLAGS.auto_spmd)
 
+import torch_xla.debug.profiler as xp
+
+# Read optional profiling env vars
+profile_step = 10
+profile_epoch = 1
+profile_logdir = "/root/profile/"
+
 DEFAULT_KWARGS = dict(
     batch_size=128,
     test_set_batch_size=64,
@@ -229,6 +236,7 @@ def train_imagenet():
     # Model sharding
     if 'conv' in FLAGS.sharding:
       # Shard the model's convlution layers along two dimensions
+      # TODO(haijingfu) update back
       # mesh_shape = (2, num_devices // 2, 1, 1)
       mesh_shape = (num_devices // 2, 2, 1, 1)
       mesh = xs.Mesh(device_ids, mesh_shape, ('w', 'x', 'y', 'z'))
@@ -314,6 +322,9 @@ def train_imagenet():
     tracker = xm.RateTracker()
     model.train()
     for step, (data, target) in enumerate(loader):
+      if epoch == profile_epoch and step == profile_step:
+        # Use trace_detached to capture the profile from a background thread
+        xp.trace_detached('localhost:9012', profile_logdir)
       x = data.to(xm.xla_device())
       y = target.to(xm.xla_device())
       with xp.StepTrace('train_imagenet'):
