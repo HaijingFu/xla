@@ -121,7 +121,16 @@ commands on your Linux machine directly, outside of the container.
        [bazel remote build caching](https://github.com/pytorch/xla/blob/master/docs/source/contribute/bazel.md#remote-caching)
        for faster builds.
 
-2.  Open a new terminal window in VS Code. Since you are running as root in this
+1.  Make sure VSCode discovers the `pytorch/xla` repo so that diff highlighting
+    works (by default VSCode cannot discover it as it's nested inside the
+    `pytorch` repo):
+
+    1. Go to File > Add Folder to Workspace..., and add the `pytorch/xla`
+       folder.
+    1. In the repository list, you should now see 3 repos: `xla` (for
+       `pytorch/xla`), `pytorch`, and `vision`.
+
+1.  Open a new terminal window in VS Code. Since you are running as root in this
     container, mark the repository directories as safe. The commands below assume
     your workspace directory is `torch`, update the commands to use your workspace
     directory.
@@ -132,7 +141,7 @@ commands on your Linux machine directly, outside of the container.
     git config --global --add safe.directory /workspaces/torch/vision
     ```
 
-3.  In the terminal window, run the following commands to build PyTorch,
+1.  In the terminal window, run the following commands to build PyTorch,
     TorchVision, and PyTorch/XLA:
 
     ```bash
@@ -153,13 +162,34 @@ commands on your Linux machine directly, outside of the container.
       -f https://storage.googleapis.com/libtpu-releases/index.html
     ```
 
-4.  If you are running on a TPU VM, ensure `torch` and `torch_xla` were built and
+1.  If you are running on a TPU VM, ensure `torch` and `torch_xla` were built and
     installed correctly:
 
     ```bash
     python -c 'import torch_xla as xla; print(xla.device())'
     # Output: xla:0
     ```
+
+1.  Set up `clangd` so that C++ code completion/navigation works:
+
+    1. Install `clangd`: open any C++ source file in VS Code to trigger a
+       prompt to install `clangd` in the dev container. Accept the request.
+       Restart VS Code for the change to take effect.
+
+    1. Generate the compilation database so that `clangd` knows how to compile
+       the C++ files:
+
+       ```bash
+       # Run this from a terminal in VS Code, in the pytorch/xla directory
+       # of the workspace.
+       scripts/update_compile_commands.py
+       ```
+
+       This should create the `build/compile_commands.json` file, which
+       describes how each C++ source file is compiled. The script may take
+       several minutes the first time. You may need to rerun the script
+       if build rules or file structures have changed. However, subsequent
+       runs are usually much faster.
 
 **Subsequent builds**: after building the packages from source code for the
 first time, you may need to build everything again, for example, after a
@@ -231,7 +261,7 @@ If your PR touches the Python source files, please run the following command bef
 
 ```Shell
 # How to install: pip install yapf==0.40.2
-yapf --recursive -i *.py test/ scripts/ torch_xla/ benchmarks/
+yapf --recursive -i *.py test/ scripts/ torch_xla/ benchmarks/ torchax/
 ```
 
 ### Running the Tests
@@ -310,6 +340,8 @@ git fetch upstream
 git checkout main 
 # Merge the changes from upstream/main into your local branch.
 git merge upstream/main
+# Update submodules to match the latest changes.
+git submodule update --recursive 
 # Push the updated branch to your fork on GitHub.
 git push origin main
 ```
@@ -333,4 +365,25 @@ git fetch upstream
 git checkout master
 git merge upstream/master
 git push origin master
+```
+
+## Updating Local Branch with Upstream Changes
+
+While you work on a PR, other PRs may be merged into the upstream repo's
+default branch, and you may want to make sure your PR works with them.
+In this case, you'll want to rebase your commits on top of the upstream
+commits. You can do this by:
+
+```bash
+cd $WORKSPACE_DIR/pytorch/xla
+git checkout your-branch-name
+# Update the remote-tracking branches for upstream.
+git fetch upstream
+# Rebase commits in your PR on top of the upstream master branch.
+git rebase upstream/master
+# If the above command fails due to merge conflicts, follow the error messages
+# to resolve the conflicts.
+# When you are done, push the updated branch to your fork on GitHub. This will
+# update the PR.
+git push --force-with-lease origin your-branch-name
 ```
