@@ -325,7 +325,8 @@ def train_imagenet():
       if epoch == 1 and step == 5:
         duration_ms = 3000  # ~3 seconds for 10 steps (adjust based on ExecuteReplicatedTime)
         xm.master_print(f"[Profiler] Capturing TPU trace to {profile_logdir}")
-        xp.trace_detached('localhost:9012', profile_logdir, duration_ms=3000, delay_ms=200)
+        xp.trace_detached(
+            'localhost:9012', profile_logdir, duration_ms=3000, delay_ms=200)
       x = data.to(xm.xla_device())
       y = target.to(xm.xla_device())
       with xp.StepTrace('train_imagenet'):
