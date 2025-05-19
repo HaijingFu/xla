@@ -323,11 +323,17 @@ def train_imagenet():
     model.train()
     for step, (data, target) in enumerate(loader):
       if epoch == profile_epoch and step == profile_step:
-        profile_steps = 10
-        xm.master_print(
-            f"[Profiler] Capturing {profile_steps} steps from epoch {epoch}, step {step}..."
+        duration_ms = 3000  # ~3 seconds for 10 steps (adjust based on ExecuteReplicatedTime)
+        xm.master_print(f"[Profiler] Capturing TPU trace to {profile_logdir}")
+        xp.trace_detached(
+            service_addr="localhost:9012",
+            logdir=profile_logdir,
+            duration_ms=duration_ms,
+            num_tracing_attempts=3,
+            host_tracer_level=2,
+            device_tracer_level=1,
+            delay_ms=100
         )
-        xp.trace("/tmp/tpu_trace", profile_steps)
       x = data.to(xm.xla_device())
       y = target.to(xm.xla_device())
       with xp.StepTrace('train_imagenet'):
