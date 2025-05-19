@@ -322,11 +322,11 @@ def train_imagenet():
     tracker = xm.RateTracker()
     model.train()
     for step, (data, target) in enumerate(loader):
-      if epoch == profile_epoch and step == profile_step:
+      if epoch == 1 and step == 5:
         duration_ms = 3000  # ~3 seconds for 10 steps (adjust based on ExecuteReplicatedTime)
         xm.master_print(f"[Profiler] Capturing TPU trace to {profile_logdir}")
         xp.trace_detached(
-            'localhost:9012', profile_logdir
+            'localhost:9012', profile_logdir, duration_ms=3000, delay_ms=200
         )
       x = data.to(xm.xla_device())
       y = target.to(xm.xla_device())
